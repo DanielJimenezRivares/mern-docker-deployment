@@ -35,14 +35,6 @@ Each component runs in its own independent container.
 
 ```text
 .
-├── backend/
-│   ├── Dockerfile
-│   └── ...
-├── frontend/
-│   ├── Dockerfile
-│   ├── nginx.conf.template
-│   └── ...
-├── docker-compose.yml
 ├── ansible/
 │   ├── ansible.cfg
 │   ├── inventory/
@@ -53,4 +45,13 @@ Each component runs in its own independent container.
 │   │   └── app_deploy.yml
 │   └── swarm/
 │       └── stack.yml
-└── README.md
+├── backend/
+│   ├── Dockerfile
+│   └── ...
+├── frontend/
+│   ├── Dockerfile
+│   ├── nginx.conf.template
+│   └── ...
+├── docker-compose.yml
+├── README.md
+└── stack.yml

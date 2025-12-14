@@ -94,23 +94,8 @@
       delegate_to: "{{ manager }}"
       when: swarm_role is defined
 
-- name: Crear red overlay
-  hosts: swarm_managers
-  become: yes
-  tasks:
-    - name: Crear red noteboards
-      community.docker.docker_network:
-        name: "noteboards"
-        driver: overlay
-        attachable: true
-        state: present
-
-- name: Desplegar stack noteboards en el manager (frontend)
-  hosts: frontend
-  become: yes
-
-  vars:
-    env_file: "{{ inventory_dir }}/.env"
+  vars_files:
+    - "{{ playbook_dir }}/../inventory/vault/stack_env.yml"
 
   tasks:
     - name: Crear directorio para el stack
@@ -129,5 +114,4 @@
       environment:
         MONGO_INITDB_ROOT_USERNAME: "{{ MONGO_INITDB_ROOT_USERNAME }}"
         MONGO_INITDB_ROOT_PASSWORD: "{{ MONGO_INITDB_ROOT_PASSWORD }}"
-        FRONTEND_PORT: "{{ FRONTEND_PORT | default('80') }}"
-        API_BACKEND: "{{ API_BACKEND | default('http://backend:4000') }}"
+        JWT_SECRET: " {{ JWT_SECRET }} "
