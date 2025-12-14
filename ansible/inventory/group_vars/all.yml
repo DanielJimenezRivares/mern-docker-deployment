@@ -1,4 +1,3 @@
-# Frontend NICs
 node_nics:
   - name: nic1
     profile_name: DOC1
