@@ -7,7 +7,7 @@ ARG VITE_API_BASE=/api
 RUN npm run build
 
 FROM nginx:alpine
-COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && apk add --no-cache gettext
 COPY --from=build /usr/src/frontend/dist /usr/share/nginx/html
