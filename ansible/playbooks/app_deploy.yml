@@ -94,9 +94,11 @@
       delegate_to: "{{ manager }}"
       when: swarm_role is defined
 
+- name: Desplegar aplicación
+  hosts: swarm_managers
+  become: yes
   vars_files:
     - "{{ playbook_dir }}/../inventory/vault/stack_env.yml"
-
   tasks:
     - name: Crear directorio para el stack
       file:
@@ -114,4 +116,4 @@
       environment:
         MONGO_INITDB_ROOT_USERNAME: "{{ MONGO_INITDB_ROOT_USERNAME }}"
         MONGO_INITDB_ROOT_PASSWORD: "{{ MONGO_INITDB_ROOT_PASSWORD }}"
-        JWT_SECRET: " {{ JWT_SECRET }} "
+        JWT_SECRET: "{{ JWT_SECRET }}"
