@@ -16,7 +16,7 @@ services:
           - node.labels.role == db
 
   backend:
-    image: ghcr.io/DanielJimenezRivares/mern-docker-deployment-backend:latest
+    image: ghcr.io/DanielJimenezRivares/mern-docker-deployment-backend:main
     environment:
       PORT: 4000
       MONGO_URI: "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/noteboards?authSource=admin"
@@ -28,7 +28,7 @@ services:
           - node.labels.role == backend
 
   frontend:
-    image: ghcr.io/DanielJimenezRivares/mern-docker-deployment-frontend:latest
+    image: ghcr.io/DanielJimenezRivares/mern-docker-deployment-frontend:main
     environment:
       API_BACKEND: "${API_BACKEND:-http://backend:4000}"
     ports:
