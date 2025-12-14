@@ -1,7 +1,7 @@
 FROM node:alpine AS build
 WORKDIR /usr/src/frontend
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --omit=dev
 COPY . .
 ARG VITE_API_BASE=/api
 RUN npm run build
