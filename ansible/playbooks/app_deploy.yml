@@ -1,0 +1,133 @@
+- name: Instalar Docker en todos los nodos
+  hosts: swarm
+  become: yes
+  tasks:
+    - name: Instalar dependencias
+      apt:
+        name: [ "ca-certificates", "curl", "gnupg", "lsb-release" ]
+        state: present
+        update_cache: yes
+
+    - name: Agregar repositorio de Docker
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+        https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+        > /etc/apt/sources.list.d/docker.list
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Instalar Docker Engine
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Añadir usuario ansible al grupo docker
+      user:
+        name: ansible
+        append: yes
+        groups: docker
+
+- name: Instalar dependencias de Python para módulos Docker de Ansible
+  hosts: swarm
+  become: yes
+  tasks:
+    - name: Asegurar que python3-pip está instalado
+      apt:
+        name: python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Instalar Docker SDK para Python (módulo docker)
+      pip:
+        name:
+          - "docker>=5.0.0"
+        executable: pip3
+
+- name: Inicializar Swarm en el manager
+  hosts: swarm_managers
+  become: yes
+  tasks:
+    - name: Inicializar Docker Swarm
+      community.docker.docker_swarm:
+        state: present
+        advertise_addr: "{{ ansible_host }}"
+      register: swarm_init
+
+    - name: Guardar token de worker
+      set_fact:
+        swarm_worker_token: "{{ swarm_init.swarm_facts.JoinTokens.Worker }}"
+        swarm_manager_ip: "{{ ansible_host }}"
+
+- name: Unir workers al swarm
+  hosts: swarm_workers
+  become: yes
+  vars:
+    manager: "{{ groups['swarm_managers'][0] }}"
+  tasks:
+    - name: Unirse al Swarm como worker
+      community.docker.docker_swarm:
+        state: join
+        join_token: "{{ hostvars[manager].swarm_worker_token }}"
+        remote_addrs: [ "{{ hostvars[manager].swarm_manager_ip }}" ]
+
+- name: Etiquetar nodos
+  hosts: swarm
+  become: yes
+  vars:
+    manager: "{{ groups['swarm_managers'][0] }}"
+  tasks:
+    - name: Get my Swarm NodeID
+      command: docker info -f '{{ "{{.Swarm.NodeID}}" }}'
+      register: my_nodeid
+      changed_when: false
+
+    - name: Apply role label from inventory
+      command: >
+        docker node update --label-add role={{ swarm_role }} {{ my_nodeid.stdout }}
+      delegate_to: "{{ manager }}"
+      when: swarm_role is defined
+
+- name: Crear red overlay
+  hosts: swarm_managers
+  become: yes
+  tasks:
+    - name: Crear red noteboards
+      community.docker.docker_network:
+        name: "noteboards"
+        driver: overlay
+        attachable: true
+        state: present
+
+- name: Desplegar stack noteboards en el manager (frontend)
+  hosts: frontend
+  become: yes
+
+  vars:
+    env_file: "{{ inventory_dir }}/.env"
+
+  tasks:
+    - name: Crear directorio para el stack
+      file:
+        path: /opt/noteboards
+        state: directory
+        mode: '0755'
+
+    - name: Copiar stack.yml al manager
+      copy:
+        src: "{{ playbook_dir }}/../swarm/stack.yml"
+        dest: /opt/noteboards/stack.yml
+
+    - name: Desplegar stack con docker stack deploy
+      command: docker stack deploy -c /opt/noteboards/stack.yml noteboards
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: "{{ MONGO_INITDB_ROOT_USERNAME }}"
+        MONGO_INITDB_ROOT_PASSWORD: "{{ MONGO_INITDB_ROOT_PASSWORD }}"
+        FRONTEND_PORT: "{{ FRONTEND_PORT | default('80') }}"
+        API_BACKEND: "{{ API_BACKEND | default('http://backend:4000') }}"

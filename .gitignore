@@ -1,0 +1,7 @@
+# Ignore ALL .env files everywhere
+.env
+.env.*
+!.env.example
+
+ansible/inventory/vault/alu0101112657ull.yml
+ansible/playbooks/AITS-create-vm.yml

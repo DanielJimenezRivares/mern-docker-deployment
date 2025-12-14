@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - noteboards
+    deploy:
+      placement:
+        constraints:
+          - node.labels.role == db
+
+  backend:
+    image: ghcr.io/DanielJimenezRivares/mern-docker-deployment-backend:latest
+    environment:
+      PORT: 4000
+      MONGO_URI: "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/noteboards?authSource=admin"
+    networks:
+      - noteboards
+    deploy:
+      placement:
+        constraints:
+          - node.labels.role == backend
+
+  frontend:
+    image: ghcr.io/DanielJimenezRivares/mern-docker-deployment-frontend:latest
+    environment:
+      API_BACKEND: "${API_BACKEND:-http://backend:4000}"
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - noteboards
+    deploy:
+      placement:
+        constraints:
+          - node.labels.role == frontend
+
+networks:
+  noteboards:
+    external: true
+
+volumes:
+  mongo_data:

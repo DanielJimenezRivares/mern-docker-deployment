@@ -1,0 +1,12 @@
+# Frontend NICs
+node_nics:
+  - name: nic1
+    profile_name: DOC1
+  - name: nic2
+    profile_name: DOCP2P-4044
+
+nic_address:
+  - name: nic1
+    address: dhcp
+  - name: nic2
+    address: "{{ ip_cidr }}"
