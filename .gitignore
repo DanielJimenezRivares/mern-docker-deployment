@@ -3,5 +3,5 @@
 .env.*
 !.env.example
 
-ansible/inventory/vault/alu0101112657ull.yml
+ansible/inventory/vault/*ull.yml
 ansible/playbooks/AITS-create-vm.yml
